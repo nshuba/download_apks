@@ -33,12 +33,12 @@ Play Store. We provide a script for fetching the top 10 apps from each
 Google Play category and save the information in a CSV file.
 You can run it as-is, or modify it as you see fit:
     ```
-    $ python3 prep_app_list.py <gsfId> <authSubToken> <apps.csv>
+    $ python3 prep_apks.py <gsfId> <authSubToken> <apps.csv>
     ```
     Where `<apps.csv>` is the CSV file to which you want save the list of apps.
 * Next, you can download APKs corresponding to package names in `<apps.csv>`:
     ```
-    $ python3 download_apks.py <gsfId> <authSubToken> <apps.csv> <output_dir>
+    $ python3 prep_apks.py <gsfId> <authSubToken> <apps.csv> --output_dir <output_dir>
     ```
     Where `<apps.csv>` is the CSV file from the earlier step, and
-    `<output_dir>` is the directory to which you want to save APKs to.
+    `<output_dir>` is the directory to which you want to save APKs.

@@ -1,25 +1,14 @@
 #!/usr/bin/python3
 
-"""
-Creates a CSV file with a list of top 10 free apps from each Google Play category
-
-USAGE:
-$ python3 prep_app_list.py <gsf_id> <auth_sub_token> <apps.csv>
-"""
-
 import argparse
+import os
 import itertools
 import csv
 
 from gpapi.googleplay import GooglePlayAPI, RequestError
 from constants import Constants
 
-def prep_app_list(gsf_id, auth_sub_token, apps_csv):
-    server = GooglePlayAPI("en_US", "UTC")
-
-    # Running for the second time - use tokens
-    server.login(None, None, gsf_id, auth_sub_token)
-
+def prep_app_list(server, apps_csv):
     # Keys for app data
     top_free_cat = 'apps_topselling_free'
     key_agg_rat = 'aggregateRating'
@@ -60,16 +49,52 @@ def prep_app_list(gsf_id, auth_sub_token, apps_csv):
                         downloads]
                 writer.writerow(row)
 
+def download_apks(server, apps_file, output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    with open(apps_file, "r", newline="") as readfile:
+        # Get headers
+        reader = csv.reader(readfile, delimiter=',')
+        header_row = next(reader)
+        pkg_name_idx = header_row.index(Constants.key_pkg_name)
+
+        for row in reader:
+            pkg_name = row[pkg_name_idx]
+
+            # Download
+            print('Attempting to download %s' % pkg_name)
+            apk_file_path = output_dir + "/" + pkg_name + '.apk'
+            if os.path.isfile(apk_file_path):
+                print('\tSkipping - already exists')
+                continue
+            fl = server.download(pkg_name)
+            with open(apk_file_path, 'wb') as apk_file:
+                for chunk in fl.get('file').get('data'):
+                    apk_file.write(chunk)
+                print('\tDownload successful')
+
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(description=
-            "Creates a CSV file with a list of top 10 free apps from each Google Play category")
+    ap = argparse.ArgumentParser(description="If you don't use the option parameter `output_dir`," +
+            " then this script creates a CSV file with a list of top 10 free apps from each" +
+            " Google Play category. Otherwise, it downloads the APKs corresponding to apps in the" +
+            " provided `apps_csv` parameter.")
     ap.add_argument('gsf_id', type=int, help="gsfId from the prep_token_id script")
     ap.add_argument('auth_sub_token', help="authSubToken from the prep_token_id script")
-    ap.add_argument('apps_csv', help='CSV file to write app data to')
+    ap.add_argument('apps_csv', help='CSV file to write/read app data to/from')
+    ap.add_argument('--output_dir',
+                    help='Directory to which you want to save APKs corresponding to package names' +
+                         ' in `apps_csv`. Use this argument when ready to download APKs.')
     args = ap.parse_args()
 
-    prep_app_list(args.gsf_id, args.auth_sub_token, args.apps_csv)
+    server = GooglePlayAPI("en_US", "UTC")
+    server.login(None, None, args.gsf_id, args.auth_sub_token)
+
+    if not args.output_dir:
+        prep_app_list(server, args.apps_csv)
+    else:
+        download_apks(server, args.apps_csv, args.output_dir)
 
 
             
