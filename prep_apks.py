@@ -48,8 +48,8 @@ def prep_app_list(server, apps_csv):
             category = c["unknownCategoryContainer"]["categoryIdContainer"]["categoryId"]
             print("Fetching apps for category %s" % category)
 
-            top_free = server.list(category, top_free_cat)
-            for app in itertools.islice(top_free, 0, app_limit):
+            top_free = server.list(category, top_free_cat, app_limit)
+            for app in top_free:
                 print("\t" + app[Constants.key_pkg_name])
 
                 agg_rating = app[key_agg_rat]
